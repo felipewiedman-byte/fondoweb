@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>🌍 FONDO CON VIDEOS - DÍA/NOCHE</title>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+}
+
+.video-fondo {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 1s ease;
+}
+
+#video-dia {
+    opacity: 1;
+    z-index: 1;
+}
+
+#video-noche {
+    opacity: 0;
+    z-index: 2;
+}
+
+/* Mensaje de carga */
+#cargando {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: Arial, sans-serif;
+    z-index: 9999;
+    transition: opacity 1s;
+}
+</style>
+</head>
+<body>
+    <div id="cargando">CARGANDO VIDEOS...</div>
+
+    <video id="video-dia" class="video-fondo" muted loop playsinline preload="auto">
+        <source src="URL_VIDEO_DIA" type="video/mp4">
+    </video>
+    
+    <video id="video-noche" class="video-fondo" muted loop playsinline preload="auto">
+        <source src="https://res.cloudinary.com/dcidnixqj/video/upload/v1772596736/Planeta-2026-03-03_03_00_33_Copy_-3_bbbi7e.mp4" type="video/mp4">
+    </video>
+
+    <script>
+    (function() {
+        'use strict';
+        
+        const videoDia = document.getElementById('video-dia');
+        const videoNoche = document.getElementById('video-noche');
+        const cargando = document.getElementById('cargando');
+        
+        let modoActual = null;
+        let intentos = 0;
+        
+        // ============================================
+        // FUNCIÓN PARA FORZAR REPRODUCCIÓN
+        // ============================================
+        async function forzarReproduccion(video) {
+            try {
+                await video.play();
+                return true;
+            } catch (error) {
+                console.log('Error reproducción:', error);
+                return false;
+            }
+        }
+        
+        // ============================================
+        // INICIAR VIDEOS
+        // ============================================
+        async function iniciarVideos() {
+            const hora = new Date().getHours();
+            const esDia = hora >= 6 && hora < 18;
+            
+            // Precargar ambos
+            videoDia.load();
+            videoNoche.load();
+            
+            // Intentar reproducir el que corresponde
+            if (esDia) {
+                const ok = await forzarReproduccion(videoDia);
+                if (ok) {
+                    videoDia.style.opacity = '1';
+                    videoNoche.style.opacity = '0';
+                    videoNoche.pause();
+                    modoActual = 'dia';
+                }
+            } else {
+                const ok = await forzarReproduccion(videoNoche);
+                if (ok) {
+                    videoNoche.style.opacity = '1';
+                    videoDia.style.opacity = '0';
+                    videoDia.pause();
+                    modoActual = 'noche';
+                }
+            }
+            
+            // Ocultar mensaje de carga
+            setTimeout(() => {
+                cargando.style.opacity = '0';
+                setTimeout(() => cargando.style.display = 'none', 1000);
+            }, 500);
+        }
+        
+        // ============================================
+        // SEGUNDO INTENTO (si el primero falla)
+        // ============================================
+        function intentarDeNuevo() {
+            if (!videoDia.paused || !videoNoche.paused) return;
+            
+            intentos++;
+            if (intentos > 5) return; // Máximo 5 intentos
+            
+            console.log('Intento', intentos, 'de reproducción');
+            
+            const hora = new Date().getHours();
+            const esDia = hora >= 6 && hora < 18;
+            
+            if (esDia) {
+                forzarReproduccion(videoDia).then(ok => {
+                    if (ok) {
+                        videoDia.style.opacity = '1';
+                        videoNoche.style.opacity = '0';
+                        videoNoche.pause();
+                        modoActual = 'dia';
+                        cargando.style.display = 'none';
+                    }
+                });
+            } else {
+                forzarReproduccion(videoNoche).then(ok => {
+                    if (ok) {
+                        videoNoche.style.opacity = '1';
+                        videoDia.style.opacity = '0';
+                        videoDia.pause();
+                        modoActual = 'noche';
+                        cargando.style.display = 'none';
+                    }
+                });
+            }
+        }
+        
+        // ============================================
+        // CAMBIAR DE VIDEO
+        // ============================================
+        function cambiarVideo() {
+            const ahora = new Date();
+            const colombiaTime = new Date(ahora.toLocaleString('en-US', { timeZone: 'America/Bogota' }));
+            const hora = colombiaTime.getHours();
+            
+            const esDia = hora >= 6 && hora < 18;
+            
+            if (esDia && modoActual !== 'dia') {
+                // Cambiar a día
+                videoDia.style.opacity = '1';
+                videoNoche.style.opacity = '0';
+                
+                forzarReproduccion(videoDia);
+                videoNoche.pause();
+                videoNoche.currentTime = 0;
+                
+                modoActual = 'dia';
+                
+            } else if (!esDia && modoActual !== 'noche') {
+                // Cambiar a noche
+                videoDia.style.opacity = '0';
+                videoNoche.style.opacity = '1';
+                
+                forzarReproduccion(videoNoche);
+                videoDia.pause();
+                videoDia.currentTime = 0;
+                
+                modoActual = 'noche';
+            }
+        }
+        
+        // ============================================
+        // INICIAR
+        // ============================================
+        iniciarVideos();
+        
+        // Intentar cada 2 segundos si no hay video
+        setInterval(intentarDeNuevo, 2000);
+        
+        // Verificar cambio cada minuto
+        setInterval(cambiarVideo, 60000);
+        
+        // Verificar reproducción cada 5 segundos
+        setInterval(() => {
+            if (modoActual === 'dia' && videoDia.paused) {
+                forzarReproduccion(videoDia);
+            }
+            if (modoActual === 'noche' && videoNoche.paused) {
+                forzarReproduccion(videoNoche);
+            }
+        }, 5000);
+        
+    })();
+    </script>
+</body>
+</html>
