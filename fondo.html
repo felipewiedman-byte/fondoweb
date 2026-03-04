@@ -37,7 +37,6 @@ html, body {
     z-index: 2;
 }
 
-/* Mensaje de carga */
 #cargando {
     position: fixed;
     top: 0;
@@ -58,10 +57,12 @@ html, body {
 <body>
     <div id="cargando">CARGANDO VIDEOS...</div>
 
+    <!-- VIDEO DE DÍA - AHORA CON LA MISMA URL PARA PROBAR -->
     <video id="video-dia" class="video-fondo" muted loop playsinline preload="auto">
-        <source src="URL_VIDEO_DIA" type="video/mp4">
+        <source src="https://res.cloudinary.com/dcidnixqj/video/upload/v1772596736/Planeta-2026-03-03_03_00_33_Copy_-3_bbbi7e.mp4" type="video/mp4">
     </video>
     
+    <!-- VIDEO DE NOCHE -->
     <video id="video-noche" class="video-fondo" muted loop playsinline preload="auto">
         <source src="https://res.cloudinary.com/dcidnixqj/video/upload/v1772596736/Planeta-2026-03-03_03_00_33_Copy_-3_bbbi7e.mp4" type="video/mp4">
     </video>
@@ -77,9 +78,6 @@ html, body {
         let modoActual = null;
         let intentos = 0;
         
-        // ============================================
-        // FUNCIÓN PARA FORZAR REPRODUCCIÓN
-        // ============================================
         async function forzarReproduccion(video) {
             try {
                 await video.play();
@@ -90,9 +88,6 @@ html, body {
             }
         }
         
-        // ============================================
-        // INICIAR VIDEOS
-        // ============================================
         async function iniciarVideos() {
             const hora = new Date().getHours();
             const esDia = hora >= 6 && hora < 18;
@@ -127,14 +122,11 @@ html, body {
             }, 500);
         }
         
-        // ============================================
-        // SEGUNDO INTENTO (si el primero falla)
-        // ============================================
         function intentarDeNuevo() {
             if (!videoDia.paused || !videoNoche.paused) return;
             
             intentos++;
-            if (intentos > 5) return; // Máximo 5 intentos
+            if (intentos > 5) return;
             
             console.log('Intento', intentos, 'de reproducción');
             
@@ -164,9 +156,6 @@ html, body {
             }
         }
         
-        // ============================================
-        // CAMBIAR DE VIDEO
-        // ============================================
         function cambiarVideo() {
             const ahora = new Date();
             const colombiaTime = new Date(ahora.toLocaleString('en-US', { timeZone: 'America/Bogota' }));
@@ -175,7 +164,6 @@ html, body {
             const esDia = hora >= 6 && hora < 18;
             
             if (esDia && modoActual !== 'dia') {
-                // Cambiar a día
                 videoDia.style.opacity = '1';
                 videoNoche.style.opacity = '0';
                 
@@ -186,7 +174,6 @@ html, body {
                 modoActual = 'dia';
                 
             } else if (!esDia && modoActual !== 'noche') {
-                // Cambiar a noche
                 videoDia.style.opacity = '0';
                 videoNoche.style.opacity = '1';
                 
@@ -198,12 +185,10 @@ html, body {
             }
         }
         
-        // ============================================
         // INICIAR
-        // ============================================
         iniciarVideos();
         
-        // Intentar cada 2 segundos si no hay video
+        // Intentar cada 2 segundos
         setInterval(intentarDeNuevo, 2000);
         
         // Verificar cambio cada minuto
